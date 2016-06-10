@@ -20,4 +20,6 @@ libraryDependencies += "javax.servlet" % "javax.servlet-api" % "3.1.0"
 
 libraryDependencies += "org.scalatra" % "scalatra-scalate_2.11" % "2.4.1"
 
+libraryDependencies += "ar.com.hjg" % "pngj" % "2.1.0"
+
 libraryDependencies += "org.eclipse.jetty" % "jetty-webapp" % "9.3.9.v20160517"
