@@ -1,0 +1,29 @@
+-@ val body: String
+
+!!!
+html
+  head
+    title gridme
+    link(href="/css/bootstrap.min.css" rel="stylesheet")
+    link(href="/css/bootstrap-theme.min.css" rel="stylesheet")
+    script(src="/js/jquery-2.2.4.min.js")
+
+    style
+      | body {
+      |    padding-top: 50px;
+      |    padding-bottom: 20px;
+      |  }
+  body
+    div.navbar.navbar-inverse.navbar-fixed-top
+      div.container
+        div.navbar-header
+          a.navbar-brand(href="#") gridme
+
+    != body
+
+
+    script(src="/js/bootstrap.min.js")
+    script(src="/js/jqColorPicker.min.js")
+
+    :javascript
+      $('input.color').colorPicker();

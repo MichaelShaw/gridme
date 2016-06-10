@@ -9,10 +9,11 @@ import org.scalatra.servlet.ScalatraListener
 import org.scalatra._
 import org.scalatra.LifeCycle
 import javax.servlet.ServletContext
-
+import fastparse.all._
 import scala.util.Try
-import io.cosmicteapot.Colour.ColourI
+import org.scalatra.scalate.ScalateSupport
 
+import io.cosmicteapot.Colour.ColourI
 
 object JettyLauncher extends App { // this is my entry object as specified in sbt project definition
   run()
@@ -40,31 +41,18 @@ class ScalatraBootstrap extends LifeCycle {
   }
 }
 
-class GridServlet extends ScalatraServlet {
+class GridServlet extends MyScalatraWebAppStack {
   get("/") {
-    <html>
-      <title>gridme</title>
-      <body>
-        <h1>Hello, world!</h1>
-        <form method="get" action="/grid">
-          Width (in tiles) <input type="text" name="width_tiles" value="10" /> <br />
-          Height (in tiles) <input type="text" name="height_tiles" value="10" /> <br/>
-          Tile Width (px) <input type="text" name="tile_height" value="32" /> <br/>
-          Tile Height (px) <input type="text" name="tile_width" value="32" /> <br/>
-          Background Colour (R,G,B,A) <input type="text" name="background_colour" value="255,255,255,0" /> <br/>
-          Grid Colour (R,G,B,A) <input type="text" name="grid_colour" value="60,60,60,255" /> <br/>
-          <input type="submit" value="Create Grid" />
-        </form>
-
-      </body>
-    </html>
+    contentType="text/html"
+    jade("/index", "layout" -> "WEB-INF/templates/layouts/default.jade")
   }
+
 
   get("/grid") {
     val pngStream = for {
       widthInTiles <- toInt(params("width_tiles"))
       heightInTiles <- toInt(params("height_tiles"))
-      _ = print("I HAVE WIDTH AND HEIGHT")
+//      _ = print("I HAVE WIDTH AND HEIGHT")
       tileHeight <- toInt(params("tile_height"))
       tileWidth <- toInt(params("tile_width"))
       backgroundColour <- parseColour(params("background_colour"))
@@ -86,18 +74,35 @@ class GridServlet extends ScalatraServlet {
 
   def toInt(str:String) : Option[Int] = Try(str.toInt).toOption
   def parseColour(str:String) : Option[ColourI] = {
-    val parts = str.split(",")
-
-    val ints = for {
-      part <- parts
-      n <- toInt(part.trim())
-    } yield Colour.clamp(n, 0, 255)
-
-    if (ints.length == 4) {
-      Some(Colour.colourI(ints))
-    } else {
-      None
+    MyParse.colourParser.parse(str) match {
+      case Parsed.Success(colour, _) =>
+        Some(colour)
+      case f@Parsed.Failure(_, _, _) =>
+        println(s"failure parsing $f")
+        None
     }
   }
+}
+
+object MyParse {
+  val digits = "0123456789"
+  val DecNum = P( CharsWhile(digits.contains(_)).!.map(_.toInt))
+
+  val PostFloat = P("." ~ DecNum.map(_.toDouble))
+  val TwoPartFloat = P(DecNum ~ "." ~ DecNum).map { case (a, b) =>
+      a.toDouble + s".$b".toDouble
+  }
+
+  val Float = P(TwoPartFloat | PostFloat | DecNum.map(_.toDouble))
+
+  val paddedComma = P(" ".rep ~ "," ~ " ".rep)
+
+  val rgbParser = P( "rgb(" ~ DecNum ~ paddedComma ~ DecNum ~ paddedComma ~ DecNum ~ ")").map { case (r, g, b) =>
+    Colour.colourI(r, g, b, 255)
+  }
+  val rgbaParser = P ( "rgba(" ~ DecNum ~ paddedComma ~ DecNum ~ paddedComma ~ DecNum ~ paddedComma ~ Float ~ ")").map { case (r, g, b, a) =>
+    Colour.colourI(r, g, b, (a * 255).toInt)
+  }
+  val colourParser = P (rgbParser | rgbaParser)
 }
 

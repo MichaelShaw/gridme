@@ -8,6 +8,8 @@ import java.nio.ByteOrder
   */
 
 object Colour {
+  type ColourI = Int
+
   def r(c:ColourI) : Int = c & 0xff
   def g(c:ColourI) : Int = (c >>> 8) & 0xff
   def b(c:ColourI) : Int = (c >>> 16) & 0xff
@@ -17,8 +19,6 @@ object Colour {
   def gf(c:ColourI) : Float = g(c).asInstanceOf[Float] / 255f
   def bf(c:ColourI) : Float = b(c).asInstanceOf[Float] / 255f
   def af(c:ColourI) : Float = a(c).asInstanceOf[Float] / 255f
-
-  type ColourI = Int
 
   val maskOffOneBit = ~ Integer.parseInt("00000001000000000000000000000000", 2)
 
