@@ -18,8 +18,8 @@ object Grid {
     val image = new IntImage(width, height)
     image.assignAll(backgroundColour)
 
-    // do the griddy stuff here
     optimize {
+      // vertical lines
       for {
         tx <- 0 until tilesWide
       } {
@@ -32,6 +32,7 @@ object Grid {
         }
       }
 
+      // horizontal lines
       for {
         ty <- 0 until tilesHigh
       } {

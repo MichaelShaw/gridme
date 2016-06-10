@@ -36,11 +36,11 @@ object JettyLauncher extends App { // this is my entry object as specified in sb
 
 class ScalatraBootstrap extends LifeCycle {
   override def init(context: ServletContext) {
-    context mount (new ScalatraExample, "/*")
+    context mount (new GridServlet, "/*")
   }
 }
 
-class ScalatraExample extends ScalatraServlet {
+class GridServlet extends ScalatraServlet {
   get("/") {
     <html>
       <title>gridme</title>
@@ -75,8 +75,6 @@ class ScalatraExample extends ScalatraServlet {
       IntImage.writeToOutputStream(intImage, outputStream)
       outputStream
     }
-
-
 
     pngStream match {
       case Some(stream) =>
