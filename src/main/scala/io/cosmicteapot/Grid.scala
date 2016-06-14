@@ -11,6 +11,8 @@ import scalaxy.streams._
   * Created by michael on 10/06/2016.
   */
 
+//def parseInt(s: String): Validation[String, Int] =
+//try { Success(s.toInt) } catch { case ex: NumberFormatException => Failure(ex.getMessage) }
 
 object Grid {
   type Image = (Int, Int) => ColourI

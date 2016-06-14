@@ -9,11 +9,12 @@ import org.scalatra.servlet.ScalatraListener
 import org.scalatra._
 import org.scalatra.LifeCycle
 import javax.servlet.ServletContext
+
 import fastparse.all._
-import scala.util.Try
-import org.scalatra.scalate.ScalateSupport
 
 import io.cosmicteapot.Colour.ColourI
+
+import scalaz.ValidationNel
 
 object JettyLauncher extends App { // this is my entry object as specified in sbt project definition
   run()
@@ -52,43 +53,51 @@ class GridServlet extends MyScalatraWebAppStack {
   }
 
   get("/grid") {
-    // currently 0.07 seconds for a 32x32 grid of 32x32 tiles
-//    val start = time()
-    val pngStream = for {
-      widthInTiles <- toInt(params("width_tiles"))
-      heightInTiles <- toInt(params("height_tiles"))
-//      _ = print("I HAVE WIDTH AND HEIGHT")
-      tileHeight <- toInt(params("tile_height"))
-      tileWidth <- toInt(params("tile_width"))
-      backgroundColour <- parseColour(params("background_colour"))
-      gridColour <- parseColour(params("grid_colour"))
-    } yield {
-      val width = widthInTiles * tileWidth
-      val height = heightInTiles * tileHeight
+    import scalaz._
+    import Scalaz._
+    import scalaz.{Failure, Success, Validation, ValidationNel}
 
-      val image = Grid.grid(tileWidth, tileHeight, gridColour, backgroundColour)
+    val widthInTiles = toInt(params("width_tiles"), "Width Tiles")
+    val heightInTiles = toInt(params("height_tiles"), "Height Tiles")
+    val tileWidth = toInt(params("tile_width"), "Tile Width")
+    val tileHeight = toInt(params("tile_height"), "Tile Height")
+
+    val backgroundColour = parseColour(params("background_colour"), "Background Colour")
+    val gridColour = parseColour(params("grid_colour"), "Grid Colour")
+
+    val gridValidation = (widthInTiles |@| heightInTiles |@| tileWidth |@| tileHeight |@| backgroundColour |@| gridColour) {
+      (w, h, tw, th, background, grid) =>
+      val width = w * tw
+      val height = h * th
+      val image = Grid.grid(tw, th, grid, background)
       Grid.rasterizePNG(width, height, response.getOutputStream, image)
-      contentType="image/png"
       ()
     }
 
-    pngStream match {
-      case Some(unit) =>
-        unit
-      case None => <h2>Problem with params :-(</h2>
+    gridValidation match {
+      case Success(()) =>
+        contentType="image/png"
+        ()
+      case Failure(errors) =>
+        println(s"Errors -> $errors")
+        errors.toString()
     }
-//    val duration = time() - start
-//    println(s"duration as -> $duration")
   }
 
-  def toInt(str:String) : Option[Int] = Try(str.toInt).toOption
-  def parseColour(str:String) : Option[ColourI] = {
+  def toInt(str:String, name:String) : ValidationNel[String, Int] = {
+    import scalaz._
+    import Scalaz._
+    try { str.toInt.successNel } catch { case ex: NumberFormatException => s"Couldnt parse $name param to int".failureNel }
+  }
+
+  def parseColour(str:String, name:String) : ValidationNel[String, ColourI] = {
+    import scalaz._
+    import Scalaz._
     MyParse.colourParser.parse(str) match {
       case Parsed.Success(colour, _) =>
-        Some(colour)
+        colour.successNel
       case f@Parsed.Failure(_, _, _) =>
-        println(s"failure parsing $f")
-        None
+        s"failure parsing $f for param $name".failureNel
     }
   }
 }
