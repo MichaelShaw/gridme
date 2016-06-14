@@ -1,51 +1,64 @@
 package io.cosmicteapot
 
+import java.io.OutputStream
+
+import ar.com.hjg.pngj.{ImageInfo, ImageLineHelper, ImageLineInt, PngWriter}
 import io.cosmicteapot.Colour.ColourI
+
+import scalaxy.streams._
 
 /**
   * Created by michael on 10/06/2016.
   */
 
+
 object Grid {
-  def generate(tilesWide:Int, tilesHigh:Int,
-               tileWidth:Int, tileHeight:Int,
-               backgroundColour:ColourI, gridColour:ColourI) : IntImage = {
-    import scalaxy.streams.optimize
+  type Image = (Int, Int) => ColourI
 
-    val width = tilesWide * tileWidth
-    val height = tilesHigh * tileHeight
+  def verticalLines(everyX:Int, on:ColourI, off:ColourI = Colour.transWhite) : Image = { (x, y) =>
+    if ((x % everyX) == 0) {
+      on
+    } else {
+      off
+    }
+  }
 
-    val image = new IntImage(width, height)
-    image.assignAll(backgroundColour)
+  def horizontalLines(everyY:Int, on:ColourI, off:ColourI = Colour.transWhite) : Image = { (x, y) =>
+    if ((y % everyY) == 0) {
+      on
+    } else {
+      off
+    }
+  }
+
+  def grid(everyX:Int, everyY:Int, on:ColourI, off:ColourI = Colour.transWhite) : Image = { (x, y) =>
+    if ((x % everyX) == 0 || (y % everyY) == 0) {
+      on
+    } else {
+      off
+    }
+  }
+
+  def rasterizePNG(width:Int, height:Int, outputStream:OutputStream, image:Image) {
+    import Colour.{r, g, b, a}
+
+    val imageInfo = new ImageInfo(width, height, 8, true)
+    val png = new PngWriter(outputStream, imageInfo)
+    val iline = new ImageLineInt(imageInfo)
 
     optimize {
-      // vertical lines
-      for {
-        tx <- 0 until tilesWide
-      } {
-        val x = tx * tileWidth
-
-        for {
-          y <- 0 until height
-        } {
-          image.set(x, y, gridColour)
+      for(y <- 0 until height) {
+        for(x <- 0 until width) {
+          val c = image(x, y)
+          ImageLineHelper.setPixelRGBA8(iline, x, r(c), g(c), b(c), a(c))
         }
-      }
-
-      // horizontal lines
-      for {
-        ty <- 0 until tilesHigh
-      } {
-        val y = ty * tileHeight
-
-        for {
-          x <- 0 until width
-        } {
-          image.set(x, y, gridColour)
-        }
+        png.writeRow(iline)
       }
     }
 
-    image
+    png.end()
   }
 }
+
+
+

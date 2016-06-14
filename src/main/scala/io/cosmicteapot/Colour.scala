@@ -40,4 +40,7 @@ object Colour {
   def clamp(n:Int, a:Int, b:Int) : Int = {
     if(n < a) a else if(n > b ) b else n
   }
+
+  val transWhite = colourI(255,255,255,0)
+  val transBlack = colourI(0, 0, 0, 0)
 }

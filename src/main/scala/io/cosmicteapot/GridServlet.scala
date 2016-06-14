@@ -47,8 +47,13 @@ class GridServlet extends MyScalatraWebAppStack {
     jade("/index", "layout" -> "WEB-INF/templates/layouts/default.jade")
   }
 
+  def time() : Double = {
+    System.currentTimeMillis() / 1000.0
+  }
 
   get("/grid") {
+    // currently 0.07 seconds for a 32x32 grid of 32x32 tiles
+    val start = time()
     val pngStream = for {
       widthInTiles <- toInt(params("width_tiles"))
       heightInTiles <- toInt(params("height_tiles"))
@@ -58,18 +63,25 @@ class GridServlet extends MyScalatraWebAppStack {
       backgroundColour <- parseColour(params("background_colour"))
       gridColour <- parseColour(params("grid_colour"))
     } yield {
-      val intImage = Grid.generate(widthInTiles, heightInTiles, tileWidth, tileHeight, backgroundColour, gridColour)
-      val outputStream = new ByteArrayOutputStream()
-      IntImage.writeToOutputStream(intImage, outputStream)
-      outputStream
+      val width = widthInTiles * tileWidth
+      val height = heightInTiles * tileHeight
+
+      val image = Grid.grid(tileWidth, tileHeight, gridColour, backgroundColour)
+      Grid.rasterizePNG(width, height, response.getOutputStream, image)
+
+//      val intImage = Grid.generate(widthInTiles, heightInTiles, tileWidth, tileHeight, backgroundColour, gridColour)
+      contentType="image/png"
+//      IntImage.writeToOutputStream(intImage, response.getOutputStream())
+      ()
     }
 
     pngStream match {
-      case Some(stream) =>
-        contentType="image/png"
-        stream.toByteArray
+      case Some(unit) =>
+        unit
       case None => <h2>Problem with params :-(</h2>
     }
+    val duration = time() - start
+    println(s"duration as -> $duration")
   }
 
   def toInt(str:String) : Option[Int] = Try(str.toInt).toOption
