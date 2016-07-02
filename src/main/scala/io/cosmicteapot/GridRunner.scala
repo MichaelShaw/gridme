@@ -5,15 +5,16 @@ import java.io.{FileOutputStream, OutputStream}
 /**
   * Created by michael on 2/07/2016.
   */
-object GridRunner { //  extends App
+object GridRunner { //             extends App
   println("::: Grid Runner :::")
-  runGrid()
-  runTranslatedGrid()
-  runRotatedGrid()
-  runTriangles()
-  runPeriodLines()
-  runHexes()
-  runLines()
+//  runGrid()
+//  runTranslatedGrid()
+//  runRotatedGrid()
+//  runTriangles()
+//  runPeriodLines()
+//  runHexes()
+//  runLines()
+  runScaledHexes()
 
   def runLines() {
     val lines = Mask.horizontalLine(offsetY = 0.0, thickness = 2.0)
@@ -34,6 +35,18 @@ object GridRunner { //  extends App
     val out = new FileOutputStream("_hexes.png")
     Rasterize.superSamplePng(1024, 1024, 4, out, image)
     out.close()
+  }
+
+  def runScaledHexes() {
+    val scales = Array[Double](0.175, 0.25, 0.5, 0.75, 1.0, 2.0, 4.0)
+
+    for ((sc,i) <- scales.zipWithIndex) {
+      val mask = Grid.scaledHexMask(64.0, thickness = 1.5, scaleV = sc)
+      val image = ColouredImage.colourize(mask, on = Colour.black, off = Colour.white)
+      val out = new FileOutputStream(s"_scaled_hexes_$i.png")
+      Rasterize.superSamplePng(1024, 1024, 2, out, image)
+      out.close()
+    }
   }
 
   def runPeriodLines() {

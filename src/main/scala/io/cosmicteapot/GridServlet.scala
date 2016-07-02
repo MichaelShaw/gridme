@@ -16,7 +16,8 @@ import io.cosmicteapot.Colour.ColourI
 
 import scalaz.ValidationNel
 
-object JettyLauncher extends App { // this is my entry object as specified in sbt project definition
+object JettyLauncher extends App { //
+  // this is my entry object as specified in sbt project definition
   run()
   def run() {
     val port = if(System.getenv("PORT") != null) System.getenv("PORT").toInt else 8080
@@ -49,7 +50,8 @@ class GridServlet extends MyScalatraWebAppStack {
 
   get("/") {
     contentType="text/html"
-    jade("/index", "layout" -> "WEB-INF/templates/layouts/default.jade")
+//    jade("/index", "layout" -> "WEB-INF/templates/layouts/default.jade")
+    jade("index")
   }
 
   get("/squares/new") {
@@ -106,16 +108,18 @@ class GridServlet extends MyScalatraWebAppStack {
 
     val width = toInt(params("width"), "Width")
     val height = toInt(params("height"), "Height")
+
+    val verticalScale = toDouble(params("vertical_scale"), "Vertical Scale")
     val sideLength = toDouble(params("side_length"), "Side Length")
     val thickness = toDouble(params("thickness"), "Thickness")
 
     val backgroundColour = parseColour(params("background_colour"), "Background Colour")
     val gridColour = parseColour(params("grid_colour"), "Grid Colour")
 
-    val gridValidation = (width |@| height |@| sideLength |@| thickness |@| backgroundColour |@| gridColour) {
-      (w, h, sl, th, backgroundColour, gridColour) =>
+    val gridValidation = (width |@| height |@| verticalScale |@| sideLength |@| thickness |@| backgroundColour |@| gridColour) {
+      (w, h, scaleV, sl, th, backgroundColour, gridColour) =>
 
-      val mask = Grid.hexMask(sl, th / 2.0)
+      val mask = Grid.scaledHexMask(sl, thickness = th / 2.0, scaleV = scaleV) // Grid.hexMask(sl, th / 2.0)
       val image = ColouredImage.colourize(mask, on = gridColour, off = backgroundColour)
 
       Rasterize.superSamplePng(w, h, 4, response.getOutputStream, image)

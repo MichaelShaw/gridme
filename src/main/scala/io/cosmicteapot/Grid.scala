@@ -21,6 +21,51 @@ object Grid {
     Mask.or(Array(horizontalLines, linesB, linesC))
   }
 
+  def scaledHexMask(sideLength:Double, thickness:Double, scaleV:Double) : Mask = {
+    val hexHeight = sideLength * scala.math.cos(Math.radians(30)) * 2.0
+
+    val horizontalMask = Mask.periodHorizontalLine(offsetY = 0.0, thickness = thickness / scaleV, on = sideLength, off = sideLength * 2.0, startAt = 0.0) // 1 on, 2 off
+    val horizontalTiledMask = Mask.modulusY(hexHeight, horizontalMask)
+
+    val scaledHorizontalMask = Mask.periodHorizontalLine(offsetY = 0.0, thickness = thickness / scala.math.sqrt(scaleV), on = sideLength, off = sideLength * 2.0, startAt = 0.0) // 1 on, 2 off
+    val scaledHorizontalTiledMask = Mask.modulusY(hexHeight, scaledHorizontalMask)
+
+    val scaleMatrix = Mat3.scale(1.0, 1.0 / scaleV)
+
+    println("ok we have a scale matrix")
+
+    val res = scaleMatrix * Vec3(7.0, 3.0, 1.0)
+    println(s"Res is -> $res")
+
+    val masks = (for {
+      i <- 0 until 3
+    } yield {
+      val vertical = i > 0
+
+      val angle = Math.Tau * (i / 3.0)
+      val rotation = Mat3.rotationMat(angle)
+      val translate = Mat3.translate(sideLength * 1.5, hexHeight / 2.0)
+      val transform = rotation * scaleMatrix
+      val companionTransform = translate * rotation * scaleMatrix
+
+      val mask = if (vertical) scaledHorizontalTiledMask else horizontalTiledMask
+
+      val rotatedMask = Mask.transform(transform, mask)
+      val companionMask = Mask.transform(companionTransform, mask)
+
+      Array(rotatedMask, companionMask)
+    }).flatten.toArray
+
+
+
+    //    val m = Mask.or(masks)
+    //    val sc = Mat3.scale(12.0, 12.0)
+    //    Mask.transform(sc, m)
+
+//    Mask.transform(Mat3.translate(-128, -128), )
+    Mask.or(masks)
+  }
+
   def hexMask(sideLength:Double, thickness:Double) : Mask = {
     val hexHeight = sideLength * scala.math.cos(Math.radians(30)) * 2.0
 

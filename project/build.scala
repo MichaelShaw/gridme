@@ -28,7 +28,7 @@ object MyScalatraWebAppBuild extends Build {
       libraryDependencies ++= Seq(
         "org.scalatra" %% "scalatra" % ScalatraVersion,
         "org.scalatra" %% "scalatra-scalate" % ScalatraVersion,
-        "org.eclipse.jetty" % "jetty-webapp" % "9.3.9.v20160517",
+        "org.eclipse.jetty" % "jetty-webapp" % "9.3.9.v20160517" % "compile;container",
         "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided",
         "ar.com.hjg" % "pngj" % "2.1.0",
         "org.scalaz" %% "scalaz-core" % "7.2.3",
@@ -37,6 +37,7 @@ object MyScalatraWebAppBuild extends Build {
       scalateTemplateConfig in Compile <<= (sourceDirectory in Compile){ base =>
         Seq(
           TemplateConfig(
+//            new RichFile(new File("src")) / "web" / "webapp" / "WEB-INF" / "templates",
             base / "webapp" / "WEB-INF" / "templates",
             Seq.empty,  /* default imports should be added here */
             Seq(
