@@ -1,0 +1,64 @@
+
+div.jumbotron
+  div.container
+    form.form-horizontal#grid-form(method="GET" action="/squares.png")
+      div.form-group
+        label.col-sm-2.control-label(for="width_tiles") Tiles Wide
+        div.col-sm-10
+          input.form-control#width_tiles(type="text" name="width_tiles" value="32")
+      div.form-group
+        label.col-sm-2.control-label(for="height_tiles") Tiles High
+        div.col-sm-10
+          input.form-control#height_tiles(type="text" name="height_tiles" value="32")
+      div.form-group
+        label.col-sm-2.control-label(for="tile_width") Tile Width (px)
+        div.col-sm-10
+          input.form-control#tile_width(type="text" name="tile_width" value="32")
+      div.form-group
+        label.col-sm-2.control-label(for="tile_height") Tile Height (px)
+        div.col-sm-10
+          input.form-control#tile_height(type="text" name="tile_height" value="32")
+      div.form-group
+        label.col-sm-2.control-label(for="background_colour") Background Colour
+        div.col-sm-10
+          input.color.form-control#background_colour(type="text" name="background_colour" value="rgba(60,60,60,0.00)")
+      div.form-group
+        label.col-sm-2.control-label(for="grid_colour") Grid Color
+        div.col-sm-10
+          input.color.form-control#grid_colour(type="text" name="grid_colour" value="rgba(60, 60, 60, 0.30)")
+
+      div.form-group
+        div.col-sm-offset-2.col-sm-10
+          input.btn.btn-primary(type="submit" value="Create Grid")
+        div.col-sm-offset-2.col-sm-10#estimate
+          | estimate
+
+
+
+div.container#grid-img
+
+
+:javascript
+  $(function() {
+    function updateForm() {
+       var tilesWide = parseInt($("#width_tiles").val(), 10);
+       var tilesHigh = parseInt($("#height_tiles").val(), 10);
+       var tileWidth = parseInt($("#tile_width").val(), 10);
+       var tileHeight = parseInt($("#tile_height").val(), 10);
+       var width = tilesWide * tileWidth;
+       var height = tilesHigh * tileHeight;
+       $('#estimate').html('' + width + 'x' + height);
+    }
+
+    $('form#grid-form input').keyup(function() {
+       updateForm()
+    });
+
+    $('form#grid-form').submit(function( event ) {
+      var queryStr = $(this).serialize();
+      $('#grid-img').html('<img src="/squares.png?' + queryStr + '">');
+      event.preventDefault();
+    });
+
+    updateForm();
+  });

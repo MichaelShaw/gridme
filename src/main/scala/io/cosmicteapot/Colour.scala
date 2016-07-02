@@ -41,6 +41,8 @@ object Colour {
     if(n < a) a else if(n > b ) b else n
   }
 
+  val white = colourI(255,255,255,255)
+  val black = colourI(0, 0, 0, 255)
   val transWhite = colourI(255,255,255,0)
   val transBlack = colourI(0, 0, 0, 0)
 }

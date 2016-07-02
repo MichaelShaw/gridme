@@ -1,0 +1,44 @@
+div.jumbotron
+  div.container
+    form.form-horizontal#grid-form(method="GET" action="/hexes.png")
+      div.form-group
+        label.col-sm-2.control-label(for="width") Width (px)
+        div.col-sm-10
+          input.form-control#width(type="text" name="width" value="1024")
+      div.form-group
+        label.col-sm-2.control-label(for="height") Height (px)
+        div.col-sm-10
+          input.form-control#height(type="text" name="height" value="1024")
+      div.form-group
+        label.col-sm-2.control-label(for="side_length") Side Length (px)
+        div.col-sm-10
+          input.form-control#side_length(type="text" name="side_length" value="32")
+      div.form-group
+        label.col-sm-2.control-label(for="thickness") Line Thickness (px)
+        div.col-sm-10
+          input.form-control#thickness(type="text" name="thickness" value="2")
+      div.form-group
+        label.col-sm-2.control-label(for="background_colour") Background Colour
+        div.col-sm-10
+          input.color.form-control#background_colour(type="text" name="background_colour" value="rgba(60,60,60,0.00)")
+      div.form-group
+        label.col-sm-2.control-label(for="grid_colour") Grid Color
+        div.col-sm-10
+          input.color.form-control#grid_colour(type="text" name="grid_colour" value="rgba(60, 60, 60, 0.30)")
+
+      div.form-group
+        div.col-sm-offset-2.col-sm-10
+          input.btn.btn-primary(type="submit" value="Create Grid")
+
+div.container#grid-img
+
+:javascript
+  $(function() {
+    $('form#grid-form').submit(function( event ) {
+      var queryStr = $(this).serialize();
+      $('#grid-img').html('<img src="/hexes.png?' + queryStr + '">');
+      event.preventDefault();
+    });
+
+    updateForm();
+  });

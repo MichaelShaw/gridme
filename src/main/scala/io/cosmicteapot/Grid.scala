@@ -1,66 +1,50 @@
 package io.cosmicteapot
 
-import java.io.OutputStream
-
-import ar.com.hjg.pngj.{ImageInfo, ImageLineHelper, ImageLineInt, PngWriter}
 import io.cosmicteapot.Colour.ColourI
-
-import scalaxy.streams._
+import io.cosmicteapot.Mask.Mask
 
 /**
-  * Created by michael on 10/06/2016.
+  * Created by michael on 2/07/2016.
   */
-
-//def parseInt(s: String): Validation[String, Int] =
-//try { Success(s.toInt) } catch { case ex: NumberFormatException => Failure(ex.getMessage) }
-
 object Grid {
-  type Image = (Int, Int) => ColourI
-
-  def verticalLines(everyX:Int, on:ColourI, off:ColourI = Colour.transWhite) : Image = { (x, y) =>
-    if ((x % everyX) == 0) {
-      on
-    } else {
-      off
-    }
+  def squareMask(tileWidth:Double, tileHeight:Double, offset:Double, thickness:Double) : Mask = {
+    val horizontalLines = Mask.modulusY(tileWidth, Mask.horizontalLine(offsetY = offset, thickness = thickness))
+    val verticalLines = Mask.modulusX(tileHeight, Mask.verticalLine(offsetX = offset, thickness = thickness))
+    Mask.or(horizontalLines, verticalLines)
   }
 
-  def horizontalLines(everyY:Int, on:ColourI, off:ColourI = Colour.transWhite) : Image = { (x, y) =>
-    if ((y % everyY) == 0) {
-      on
-    } else {
-      off
-    }
+  def triangleMask(width:Double, thickness:Double) : Mask = {
+    val horizontalLines = Mask.modulusY(width, Mask.horizontalLine(offsetY = 0.0, thickness = thickness))
+    val linesB = Mask.transform(Mat3.rotationMat(Math.Tau / 6), horizontalLines)
+    val linesC = Mask.transform(Mat3.rotationMat(Math.Tau * 2 / 6), horizontalLines)
+
+    Mask.or(Array(horizontalLines, linesB, linesC))
   }
 
-  def grid(everyX:Int, everyY:Int, on:ColourI, off:ColourI = Colour.transWhite) : Image = { (x, y) =>
-    if ((x % everyX) == 0 || (y % everyY) == 0) {
-      on
-    } else {
-      off
-    }
-  }
+  def hexMask(sideLength:Double, thickness:Double) : Mask = {
+    val hexHeight = sideLength * scala.math.cos(Math.radians(30)) * 2.0
 
-  def rasterizePNG(width:Int, height:Int, outputStream:OutputStream, image:Image) {
-    import Colour.{r, g, b, a}
+    val mask = Mask.periodHorizontalLine(offsetY = 0.0, thickness = thickness, on = sideLength, off = sideLength * 2.0, startAt = 0.0) // 1 on, 2 off
+    val tiledMask = Mask.modulusY(hexHeight, mask)
 
-    val imageInfo = new ImageInfo(width, height, 8, true)
-    val png = new PngWriter(outputStream, imageInfo)
-    val iline = new ImageLineInt(imageInfo)
+    val masks = (for {
+      i <- 0 until 3
+    } yield {
+      val angle = Math.Tau * (i / 3.0)
+      val rotation = Mat3.rotationMat(angle)
+      val translate = Mat3.translate(sideLength * 1.5, hexHeight / 2.0)
+      val transform = translate * rotation
 
-    optimize {
-      for(y <- 0 until height) {
-        for(x <- 0 until width) {
-          val c = image(x, y)
-          ImageLineHelper.setPixelRGBA8(iline, x, r(c), g(c), b(c), a(c))
-        }
-        png.writeRow(iline)
-      }
-    }
+      val rotatedMask = Mask.transform(rotation, tiledMask)
+      val companionMask = Mask.transform(transform, tiledMask)
 
-    png.end()
+      Array(rotatedMask, companionMask)
+    }).flatten.toArray
+
+
+//    val m = Mask.or(masks)
+//    val sc = Mat3.scale(12.0, 12.0)
+//    Mask.transform(sc, m)
+    Mask.or(masks)
   }
 }
-
-
-

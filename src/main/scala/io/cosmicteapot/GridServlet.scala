@@ -43,16 +43,21 @@ class ScalatraBootstrap extends LifeCycle {
 }
 
 class GridServlet extends MyScalatraWebAppStack {
+  def time() : Double = {
+    System.currentTimeMillis() / 1000.0
+  }
+
   get("/") {
     contentType="text/html"
     jade("/index", "layout" -> "WEB-INF/templates/layouts/default.jade")
   }
 
-  def time() : Double = {
-    System.currentTimeMillis() / 1000.0
+  get("/squares/new") {
+    contentType="text/html"
+    jade("/squares", "layout" -> "WEB-INF/templates/layouts/default.jade")
   }
 
-  get("/grid") {
+  get("/squares.png") {
     import scalaz._
     import Scalaz._
     import scalaz.{Failure, Success, Validation, ValidationNel}
@@ -66,11 +71,55 @@ class GridServlet extends MyScalatraWebAppStack {
     val gridColour = parseColour(params("grid_colour"), "Grid Colour")
 
     val gridValidation = (widthInTiles |@| heightInTiles |@| tileWidth |@| tileHeight |@| backgroundColour |@| gridColour) {
-      (w, h, tw, th, background, grid) =>
+      (w, h, tw, th, backgroundColour, gridColour) =>
+
       val width = w * tw
       val height = h * th
-      val image = Grid.grid(tw, th, grid, background)
-      Grid.rasterizePNG(width, height, response.getOutputStream, image)
+
+      val mask = Grid.squareMask(tw, th, offset = 0.5, thickness = 0.5)
+      val image = ColouredImage.colourize(mask, on = gridColour, off = backgroundColour)
+
+      Rasterize.png(width, height, response.getOutputStream, image)
+
+      ()
+    }
+
+    gridValidation match {
+      case Success(()) =>
+        contentType="image/png"
+        ()
+      case Failure(errors) =>
+        println(s"Errors -> $errors")
+        errors.toString()
+    }
+  }
+
+  get("/hexes/new") {
+    contentType="text/html"
+    jade("/hexes", "layout" -> "WEB-INF/templates/layouts/default.jade")
+  }
+
+  get("/hexes.png") {
+    import scalaz._
+    import Scalaz._
+    import scalaz.{Failure, Success, Validation, ValidationNel}
+
+    val width = toInt(params("width"), "Width")
+    val height = toInt(params("height"), "Height")
+    val sideLength = toDouble(params("side_length"), "Side Length")
+    val thickness = toDouble(params("thickness"), "Thickness")
+
+    val backgroundColour = parseColour(params("background_colour"), "Background Colour")
+    val gridColour = parseColour(params("grid_colour"), "Grid Colour")
+
+    val gridValidation = (width |@| height |@| sideLength |@| thickness |@| backgroundColour |@| gridColour) {
+      (w, h, sl, th, backgroundColour, gridColour) =>
+
+      val mask = Grid.hexMask(sl, th / 2.0)
+      val image = ColouredImage.colourize(mask, on = gridColour, off = backgroundColour)
+
+      Rasterize.superSamplePng(w, h, 4, response.getOutputStream, image)
+
       ()
     }
 
@@ -88,6 +137,12 @@ class GridServlet extends MyScalatraWebAppStack {
     import scalaz._
     import Scalaz._
     try { str.toInt.successNel } catch { case ex: NumberFormatException => s"Couldnt parse $name param to int".failureNel }
+  }
+
+  def toDouble(str:String, name:String) : ValidationNel[String, Double] = {
+    import scalaz._
+    import Scalaz._
+    try { str.toDouble.successNel } catch { case ex: NumberFormatException => s"Couldnt parse $name param to double".failureNel }
   }
 
   def parseColour(str:String, name:String) : ValidationNel[String, ColourI] = {

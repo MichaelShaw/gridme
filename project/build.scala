@@ -8,7 +8,7 @@ import ScalateKeys._
 
 object MyScalatraWebAppBuild extends Build {
   val Organization = "Michael Shaw"
-  val Name = "gridme Web App"
+  val Name = "gridme-webapp"
   val Version = "0.1.0"
   val ScalaVersion = "2.11.8"
   val ScalatraVersion = "2.4.1"

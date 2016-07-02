@@ -18,9 +18,14 @@ html
       div.container
         div.navbar-header
           a.navbar-brand(href="#") gridme
+        div.navbar-collapse.collapse
+          ul.nav.navbar-nav
+            li
+              a(href="/squares/new") Squares
+            li
+              a(href="/hexes/new") Hexes
 
     != body
-
 
     script(src="/js/bootstrap.min.js")
     script(src="/js/jqColorPicker.min.js")
