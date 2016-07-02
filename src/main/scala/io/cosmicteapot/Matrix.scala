@@ -19,6 +19,13 @@ object Math {
   }
 }
 
+final case class Vec2m(var x:Double, var y:Double) {
+  def assign(nx:Double, ny:Double) {
+    x = nx
+    y = ny
+  }
+}
+
 final case class Vec2(x:Double, y:Double)
 final case class Vec3(x:Double, y:Double, z:Double) {
   def toVec2 : Vec2 = {
@@ -51,6 +58,14 @@ final case class Mat3(m00:Double, m10:Double, m20:Double,
     m10*u.x + m11*u.y + m12*u.z,
     m20*u.x + m21*u.y + m22*u.z
   )
+
+  def transform(u:Vec2m) {
+    val nx = m00*u.x + m01*u.y + m02 // assumed 1.0 for u.z
+    val ny = m10*u.x + m11*u.y + m12 // assumed 1.0 for u.z
+    val nz = m20*u.x + m21*u.y + m22 // assumed 1.0 for u.z
+
+    u.assign(nx / nz, ny / nz)
+  }
 }
 
 object Mat3 {

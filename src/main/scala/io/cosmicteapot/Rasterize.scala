@@ -62,11 +62,14 @@ object Mask {
     }
   }
 
-  def transform(mat:Mat3, mask:Mask) : Mask = { (x, y) =>
-    val v = Vec3(x, y, 1.0)
-    val tv = mat * v
-    val v2 = tv.toVec2
-    mask(v2.x, v2.y)
+  def transform(mat:Mat3, mask:Mask) : Mask = {
+    val v = Vec2m(0.0, 0.0)
+    val m:Mask = { (x, y) =>
+      v.assign(x, y)
+      mat.transform(v)
+      mask(v.x, v.y)
+    }
+    m
   }
 }
 
