@@ -50,13 +50,12 @@ class GridServlet extends MyScalatraWebAppStack {
 
   get("/") {
     contentType="text/html"
-//    jade("/index", "layout" -> "WEB-INF/templates/layouts/default.jade")
-    jade("index")
+    layoutTemplate("/WEB-INF/templates/views/index.jade")
   }
 
   get("/squares/new") {
     contentType="text/html"
-    jade("/squares", "layout" -> "WEB-INF/templates/layouts/default.jade")
+    layoutTemplate("/WEB-INF/templates/views/squares.jade")
   }
 
   get("/squares.png") {
@@ -98,7 +97,7 @@ class GridServlet extends MyScalatraWebAppStack {
 
   get("/hexes/new") {
     contentType="text/html"
-    jade("/hexes", "layout" -> "WEB-INF/templates/layouts/default.jade")
+    layoutTemplate("/WEB-INF/templates/views/hexes.jade")
   }
 
   get("/hexes.png") {

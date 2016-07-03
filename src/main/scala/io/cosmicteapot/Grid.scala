@@ -32,11 +32,6 @@ object Grid {
 
     val scaleMatrix = Mat3.scale(1.0, 1.0 / scaleV)
 
-    println("ok we have a scale matrix")
-
-    val res = scaleMatrix * Vec3(7.0, 3.0, 1.0)
-    println(s"Res is -> $res")
-
     val masks = (for {
       i <- 0 until 3
     } yield {
@@ -56,13 +51,6 @@ object Grid {
       Array(rotatedMask, companionMask)
     }).flatten.toArray
 
-
-
-    //    val m = Mask.or(masks)
-    //    val sc = Mat3.scale(12.0, 12.0)
-    //    Mask.transform(sc, m)
-
-//    Mask.transform(Mat3.translate(-128, -128), )
     Mask.or(masks)
   }
 
