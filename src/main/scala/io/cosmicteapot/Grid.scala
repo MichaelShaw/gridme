@@ -74,10 +74,6 @@ object Grid {
       Array(rotatedMask, companionMask)
     }).flatten.toArray
 
-
-//    val m = Mask.or(masks)
-//    val sc = Mat3.scale(12.0, 12.0)
-//    Mask.transform(sc, m)
     Mask.or(masks)
   }
 }
