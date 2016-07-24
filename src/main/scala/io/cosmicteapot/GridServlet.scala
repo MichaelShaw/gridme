@@ -14,7 +14,55 @@ import fastparse.all._
 
 import io.cosmicteapot.Colour.ColourI
 
-import scalaz.ValidationNel
+object Validation {
+  implicit class Valid[T](v:Either[String, T]) {
+    def |@|[B](other:Either[String, B]) : Either[List[String], (T,B)] = {
+      v match {
+        case Left(error) =>
+          other match {
+            case Left(oError) => Left(List(error, oError))
+            case Right(_) => Left(List(error))
+          }
+        case Right(va) =>
+          other match {
+            case Left(oError) => Left(List(oError))
+            case Right(vo) => Right((va, vo))
+          }
+      }
+    }
+  }
+
+  implicit class ValidList[T](v:Either[List[String], T]) {
+    def |@|[B](other:Either[String, B]) : Either[List[String], (T,B)] = {
+      v match {
+        case Left(errors) =>
+          other match {
+            case Left(oError) => Left(errors ++ List(oError))
+            case Right(_) => Left(errors)
+          }
+        case Right(va) =>
+          other match {
+            case Left(oError) => Left(List(oError))
+            case Right(vo) => Right((va, vo))
+          }
+      }
+    }
+  }
+
+  def apply6[A,B,C,D,E,F, O](v:Either[List[String],(((((A, B),C),D),E),F)]) (mf:(A, B, C, D, E, F) => O) : Either[List[String], O] = {
+    v match {
+      case l @ Left(errors) => Left(errors)
+      case r @ Right((((((a, b),c),d),e),f)) => Right(mf(a,b,c,d,e,f))
+    }
+  }
+
+  def apply7[A,B,C,D,E,F,G, O](v:Either[List[String],((((((A, B),C),D),E),F),G)]) (mf:(A, B, C, D, E, F, G) => O) : Either[List[String], O] = {
+    v match {
+      case l @ Left(errors) => Left(errors)
+      case r @ Right(((((((a, b),c),d),e),f),g)) => Right(mf(a,b,c,d,e,f,g))
+    }
+  }
+}
 
 object JettyLauncher extends App { //
   // this is my entry object as specified in sbt project definition
@@ -59,10 +107,7 @@ class GridServlet extends MyScalatraWebAppStack {
   }
 
   get("/squares.png") {
-    import scalaz._
-    import Scalaz._
-    import scalaz.{Failure, Success, Validation, ValidationNel}
-
+    import Validation._
     val widthInTiles = toInt(params("width_tiles"), "Width Tiles")
     val heightInTiles = toInt(params("height_tiles"), "Height Tiles")
     val tileWidth = toInt(params("tile_width"), "Tile Width")
@@ -71,7 +116,7 @@ class GridServlet extends MyScalatraWebAppStack {
     val backgroundColour = parseColour(params("background_colour"), "Background Colour")
     val gridColour = parseColour(params("grid_colour"), "Grid Colour")
 
-    val gridValidation = (widthInTiles |@| heightInTiles |@| tileWidth |@| tileHeight |@| backgroundColour |@| gridColour) {
+    val gridValidation = apply6(widthInTiles |@| heightInTiles |@| tileWidth |@| tileHeight |@| backgroundColour |@| gridColour) {
       (w, h, tw, th, backgroundColour, gridColour) =>
 
       val width = w * tw
@@ -86,10 +131,10 @@ class GridServlet extends MyScalatraWebAppStack {
     }
 
     gridValidation match {
-      case Success(()) =>
+      case Right(()) =>
         contentType="image/png"
         ()
-      case Failure(errors) =>
+      case Left(errors) =>
         println(s"Errors -> $errors")
         errors.toString()
     }
@@ -101,9 +146,7 @@ class GridServlet extends MyScalatraWebAppStack {
   }
 
   get("/hexes.png") {
-    import scalaz._
-    import Scalaz._
-    import scalaz.{Failure, Success, Validation, ValidationNel}
+    import Validation._
 
     val width = toInt(params("width"), "Width")
     val height = toInt(params("height"), "Height")
@@ -115,7 +158,7 @@ class GridServlet extends MyScalatraWebAppStack {
     val backgroundColour = parseColour(params("background_colour"), "Background Colour")
     val gridColour = parseColour(params("grid_colour"), "Grid Colour")
 
-    val gridValidation = (width |@| height |@| verticalScale |@| sideLength |@| thickness |@| backgroundColour |@| gridColour) {
+    val gridValidation = apply7(width |@| height |@| verticalScale |@| sideLength |@| thickness |@| backgroundColour |@| gridColour) {
       (w, h, scaleV, sl, th, backgroundColour, gridColour) =>
 
       val mask = Grid.scaledHexMask(sl, thickness = th / 2.0, scaleV = scaleV) // Grid.hexMask(sl, th / 2.0)
@@ -127,35 +170,29 @@ class GridServlet extends MyScalatraWebAppStack {
     }
 
     gridValidation match {
-      case Success(()) =>
+      case Right(()) =>
         contentType="image/png"
         ()
-      case Failure(errors) =>
+      case Left(errors) =>
         println(s"Errors -> $errors")
         errors.toString()
     }
   }
 
-  def toInt(str:String, name:String) : ValidationNel[String, Int] = {
-    import scalaz._
-    import Scalaz._
-    try { str.toInt.successNel } catch { case ex: NumberFormatException => s"Couldnt parse $name param to int".failureNel }
+  def toInt(str:String, name:String) : Either[String, Int] = {
+    try { Right(str.toInt)} catch { case ex: NumberFormatException => Left(s"Couldnt parse $name param to int") }
   }
 
-  def toDouble(str:String, name:String) : ValidationNel[String, Double] = {
-    import scalaz._
-    import Scalaz._
-    try { str.toDouble.successNel } catch { case ex: NumberFormatException => s"Couldnt parse $name param to double".failureNel }
+  def toDouble(str:String, name:String) : Either[String, Double] = {
+    try { Right(str.toDouble)} catch { case ex: NumberFormatException => Left(s"Couldnt parse $name param to double") }
   }
 
-  def parseColour(str:String, name:String) : ValidationNel[String, ColourI] = {
-    import scalaz._
-    import Scalaz._
+  def parseColour(str:String, name:String) : Either[String, ColourI] = {
     MyParse.colourParser.parse(str) match {
       case Parsed.Success(colour, _) =>
-        colour.successNel
+        Right(colour)
       case f@Parsed.Failure(_, _, _) =>
-        s"failure parsing $f for param $name".failureNel
+        Left(s"failure parsing $f for param $name")
     }
   }
 }
